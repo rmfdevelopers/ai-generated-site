@@ -1,0 +1,544 @@
+{
+  "name": "aderat-entertainment-ventures",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "14.1.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "lucide-react": "^0.344.0",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10",
+    "postcss": "^8",
+    "typescript": "^5",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/node": "^20"
+  }
+}
+
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: "#FF6F61",
+        secondary: "#A1332B",
+        accent: "#FFD700",
+      },
+      fontFamily: {
+        heading: ["var(--font-heading)"],
+        sans: ["var(--font-body)"],
+      },
+      animation: {
+        'slide-left': 'slide-left 40s linear infinite',
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #FF6F61;
+  --secondary: #A1332B;
+  --accent: #FFD700;
+}
+
+html { scroll-behavior: smooth; }
+body { 
+  overflow-x: hidden; 
+  font-family: var(--font-body); 
+  background-color: var(--primary);
+  color: white;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-heading); }
+
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+@keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes slide-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.animate-fadeIn { animation: fadeIn 0.8s ease-out forwards; }
+.animate-slideUp { animation: slideUp 0.8s ease-out forwards; }
+.animate-float { animation: float 6s ease-in-out infinite; }
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: { unoptimized: true },
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true }
+};
+module.exports = nextConfig;
+
+import { Oswald, Sora } from 'next/font/google';
+import "./globals.css";
+
+const heading = Oswald({ 
+  subsets: ['latin'], 
+  weight: ['400', '700'],
+  variable: '--font-heading' 
+});
+
+const body = Sora({ 
+  subsets: ['latin'], 
+  weight: ['300', '400', '600', '700'],
+  variable: '--font-body' 
+});
+
+export const metadata = {
+  title: "Aderaf Entertainment Ventures | Artisan Bakery Lagos",
+  description: "Artisan bakery specializing in bespoke cakes and luxurious pastries in Lagos.",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={`${heading.variable} ${body.variable} font-sans`}>
+        {children}
+      </body>
+    </html>
+  );
+}
+
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { 
+  Leaf, 
+  ChefHat, 
+  Timer, 
+  Menu, 
+  X, 
+  Phone, 
+  Instagram, 
+  Mail, 
+  MapPin, 
+  ImageOff, 
+  CheckCheck,
+  Clock,
+  ThumbsUp,
+  Heart
+} from 'lucide-react';
+
+// --- Types ---
+type Product = { name: string; description: string; price: string; image_url: string };
+type Stat = { number: string; label: string; icon: string };
+type Feature = { title: string; description: string; icon: string };
+type Testimonial = { name: string; text: string; role: string };
+
+// --- Safe Image Component ---
+function SafeImage({ src, alt, fill, className, priority }: {
+  src: string; alt: string; fill?: boolean; className?: string; priority?: boolean;
+}) {
+  const [error, setError] = useState(false);
+  if (error) {
+    return (
+      <div className={`flex items-center justify-center bg-secondary/20 ${className}`}>
+        <ImageOff size={24} className="text-white/20" />
+      </div>
+    );
+  }
+  return (
+    <Image 
+      src={src} 
+      alt={alt} 
+      fill={fill} 
+      width={!fill ? 800 : undefined} 
+      height={!fill ? 600 : undefined} 
+      className={className} 
+      priority={priority} 
+      onError={() => setError(true)} 
+    />
+  );
+}
+
+// --- Animation Hook ---
+const useScrollReveal = (threshold = 0.15) => {
+  const ref = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+      { threshold }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return { ref, isVisible };
+};
+
+// --- Mock Data ---
+const BRAND = {
+  name: "Aderaf Entertainment Ventures",
+  tagline: "Where Every Slice Tells A Story.",
+  description: "Artisan bakery specializing in bespoke cakes, luxurious pastries, and delightful signature snacks, crafted for every celebration in Lagos.",
+  industry: "Food & Beverage",
+  accent: "#FFD700"
+};
+
+const PRODUCTS: Product[] = [
+  { name: "Celebration Cake (6 Inch)", description: "Our signature layered sponge cake with rich buttercream, perfect for small gatherings.", price: "₦18,500", image_url: "https://picsum.photos/seed/bakery1/800/600" },
+  { name: "Gourmet Brownie Box", description: "A box of 12 fudgy, decadent brownies studded with dark chocolate chips.", price: "₦9,500", image_url: "https://picsum.photos/seed/bakery2/800/600" },
+  { name: "Mini Treat Sampler", description: "A selection of our top 5 best-selling mini-cupcakes and cake pops.", price: "₦12,000", image_url: "https://picsum.photos/seed/bakery3/800/600" },
+  { name: "Custom Sculpted Cake", description: "A fully bespoke, 3D sculpted cake for grand events and milestone birthdays.", price: "₦45,000", image_url: "https://picsum.photos/seed/bakery4/800/600" }
+];
+
+const FEATURES: Feature[] = [
+  { title: "Fresh Ingredients", description: "We only use the finest, locally-sourced ingredients to ensure peak flavour.", icon: "Leaf" },
+  { title: "Fast Delivery", description: "Quick and reliable delivery service across Lagos to ensure your treats arrive fresh.", icon: "Timer" },
+  { title: "Chef's Special", description: "New and exciting seasonal specials released every month by our head baker.", icon: "ChefHat" }
+];
+
+const STATS: Stat[] = [
+  { number: "4+", label: "Years in Business", icon: "Clock" },
+  { number: "98%", label: "Customer Satisfaction", icon: "ThumbsUp" },
+  { number: "500+", label: "Happy Celebrations", icon: "Heart" }
+];
+
+const TESTIMONIALS: Testimonial[] = [
+  { name: "Tosin A.", text: "The custom cake for my wedding was breathtaking and tasted even better than it looked! Flawless execution.", role: "Event Planner" },
+  { name: "Chika E.", text: "Best brownies in Lekki, period. They disappear too fast!", role: "Satisfied Customer" },
+  { name: "Jide M.", text: "Ordered a last-minute snack box. Incredible service and the presentation was 10/10.", role: "Happy Client" }
+];
+
+const ICONS: Record<string, any> = { Leaf, ChefHat, Timer, Clock, Heart, ThumbsUp };
+
+// --- Component Parts ---
+
+const Logo = () => (
+  <div className="flex items-center gap-2 group cursor-pointer">
+    <div className="w-10 h-10 bg-accent text-primary flex items-center justify-center font-bold text-xl rounded-lg group-hover:rotate-12 transition-transform">A</div>
+    <span className="font-heading text-xl font-bold tracking-tighter text-white uppercase hidden sm:block">Aderaf</span>
+  </div>
+);
+
+const SectionHeading = ({ title, subtitle, light = false }: { title: string, subtitle?: string, light?: boolean }) => (
+  <div className="mb-14">
+    <h2 className={`text-5xl md:text-6xl font-heading font-black tracking-tight ${light ? 'text-white' : 'text-white'}`}>{title}</h2>
+    {subtitle && <p className="text-white/50 mt-4 text-lg font-medium max-w-xl">{subtitle}</p>}
+  </div>
+);
+
+const Navbar = () => {
+  const [scrolled, setScrolled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return (
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-primary shadow-2xl py-3' : 'bg-transparent py-5'}`}>
+      <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+        <Logo />
+        <div className="hidden md:flex gap-10 items-center">
+          {['Menu', 'Story', 'Order Now'].map(link => (
+            <a key={link} href={`#${link.toLowerCase().replace(' ', '')}`} className="text-sm font-bold uppercase tracking-widest text-white/80 hover:text-accent transition-colors">{link}</a>
+          ))}
+          <a href="#contact" className="bg-accent text-primary px-6 py-2.5 rounded-full font-black text-sm uppercase hover:scale-105 transition-transform">Book Now</a>
+        </div>
+        <button className="md:hidden text-white" onClick={() => setIsOpen(true)}><Menu size={28} /></button>
+      </div>
+
+      {/* Mobile Nav */}
+      <div className={`fixed inset-0 z-[60] transition-transform duration-500 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="absolute inset-0 bg-primary" />
+        <div className="relative h-full flex flex-col p-10">
+          <button className="self-end text-white mb-20" onClick={() => setIsOpen(false)}><X size={32} /></button>
+          <div className="flex flex-col gap-8 text-4xl font-heading font-bold uppercase">
+            {['Menu', 'Story', 'Order Now'].map(link => (
+              <a key={link} href={`#${link.toLowerCase().replace(' ', '')}`} onClick={() => setIsOpen(false)}>{link}</a>
+            ))}
+          </div>
+          <div className="mt-auto border-t border-white/10 pt-8">
+            <p className="text-white/50 text-sm uppercase tracking-widest">Connect with us</p>
+            <div className="flex gap-6 mt-4">
+              <Instagram className="text-accent" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+export default function Page() {
+  const { ref: heroRef, isVisible: heroVisible } = useScrollReveal();
+  const { ref: featRef, isVisible: featVisible } = useScrollReveal();
+  const { ref: prodRef, isVisible: prodVisible } = useScrollReveal();
+  const { ref: storyRef, isVisible: storyVisible } = useScrollReveal();
+  const { ref: testRef, isVisible: testVisible } = useScrollReveal();
+  const { ref: contactRef, isVisible: contactVisible } = useScrollReveal();
+
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [sent, setSent] = useState(false);
+
+  return (
+    <main className="bg-primary selection:bg-accent selection:text-primary">
+      <Navbar />
+
+      {/* Hero Section - Pattern HR-B */}
+      <section id="home" className="min-h-screen relative flex items-end pb-32 px-6 md:px-16 overflow-hidden">
+        <SafeImage src="https://picsum.photos/seed/bakeryhero/1920/1080" alt="Bakery Hero" fill className="object-cover" priority />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-transparent to-transparent" />
+        
+        <div className={`relative z-10 max-w-4xl transition-all duration-1000 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`} ref={heroRef}>
+          <h1 className="font-heading text-7xl md:text-9xl font-black text-white leading-[0.85] tracking-tight uppercase">
+            Taste The <span className="text-accent">Hype.</span> Order Now.
+          </h1>
+          <p className="text-white/80 mt-8 text-xl md:text-2xl max-w-2xl font-medium leading-relaxed">
+            Aderaf delivers unforgettable flavour and flawless design for your most cherished moments in Lagos.
+          </p>
+          <div className="flex gap-5 mt-12 flex-wrap">
+            <a href="#products" className="bg-accent text-primary px-10 py-5 font-black text-lg uppercase rounded-full hover:brightness-110 transition-all shadow-xl shadow-black/10">See The Menu</a>
+            <a href="#contact" className="border-2 border-white/30 text-white px-10 py-5 font-black text-lg uppercase rounded-full hover:bg-white/10 transition-all">Get Quote</a>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Divider - D-GRID */}
+      <div className="py-12 border-y border-white/10 bg-primary/50 backdrop-blur-md overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-12">
+          {['Fresh', 'Crafted', 'Lagos Finest', 'Artisan'].map((word, i) => (
+            <div key={i} className="flex items-center gap-4 text-white/30 text-sm font-bold tracking-[0.4em] uppercase">
+              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              {word}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Features Section - F-ICON-GRID */}
+      <section id="why" className="py-32 px-6" ref={featRef}>
+        <div className="max-w-7xl mx-auto">
+          <SectionHeading title="Why Aderaf?" subtitle="Our promise goes beyond just baking; it’s about creating edible art." />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {FEATURES.map((f, i) => {
+              const Icon = ICONS[f.icon];
+              return (
+                <div key={i} className={`p-10 rounded-3xl bg-secondary/20 border border-white/5 hover:border-accent/30 transition-all group duration-500 ${featVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: `${i * 150}ms` }}>
+                  <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-8 group-hover:scale-110 group-hover:bg-accent group-hover:text-primary transition-all">
+                    <Icon size={32} strokeWidth={2.5} />
+                  </div>
+                  <h3 className="font-heading text-3xl font-bold text-white mb-4 uppercase">{f.title}</h3>
+                  <p className="text-white/50 leading-relaxed text-lg">{f.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Products Section - P-ASYMMETRIC */}
+      <section id="menu" className="py-32 px-6 bg-secondary/5" ref={prodRef}>
+        <div className="max-w-7xl mx-auto">
+          <SectionHeading title="Sweet Selections" subtitle="Browse our signature menu items and place your order directly." />
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            {/* Featured Item */}
+            <div className={`md:col-span-8 group relative rounded-3xl overflow-hidden aspect-[16/9] md:aspect-auto md:h-[600px] transition-all duration-700 ${prodVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+              <SafeImage src={PRODUCTS[3].image_url} alt={PRODUCTS[3].name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 p-10 w-full flex flex-col md:flex-row justify-between items-end gap-6">
+                <div>
+                  <h3 className="font-heading text-5xl font-black text-white uppercase">{PRODUCTS[3].name}</h3>
+                  <p className="text-white/60 text-lg mt-3 max-w-md">{PRODUCTS[3].description}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-accent text-4xl font-black mb-4">{PRODUCTS[3].price}</p>
+                  <a href="#contact" className="bg-accent text-primary px-8 py-4 rounded-full font-black uppercase hover:scale-105 transition-transform inline-block">Order This</a>
+                </div>
+              </div>
+            </div>
+            {/* Smaller Grid */}
+            <div className="md:col-span-4 flex flex-col gap-8">
+              {PRODUCTS.slice(0, 3).map((p, i) => (
+                <div key={i} className={`bg-secondary/20 rounded-3xl p-6 border border-white/5 flex gap-6 items-center transition-all duration-700 ${prodVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`} style={{ transitionDelay: `${(i+1) * 200}ms` }}>
+                  <div className="relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden">
+                    <SafeImage src={p.image_url} alt={p.name} fill className="object-cover" />
+                  </div>
+                  <div>
+                    <h4 className="font-heading text-xl font-bold text-white uppercase">{p.name}</h4>
+                    <p className="text-accent font-black mt-1">{p.price}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section - Text Left, Image Right */}
+      <section id="story" className="py-32 px-6 overflow-hidden" ref={storyRef}>
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-20 items-center">
+          <div className={`transition-all duration-1000 ${storyVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'}`}>
+            <p className="text-accent font-bold tracking-[0.4em] uppercase mb-6">Quality wey go loud.</p>
+            <h2 className="font-heading text-6xl font-black text-white leading-tight uppercase mb-8">Our Kitchen Story</h2>
+            <p className="text-white/60 text-xl leading-relaxed mb-12">
+              Founded from a passion for making celebrations sweeter, Aderaf Entertainment Ventures has quickly become the go-to for premium baked goods in the city. We mix Lagos vibrancy with world-class baking techniques.
+            </p>
+            <div className="grid grid-cols-2 gap-8 border-t border-white/10 pt-12">
+              {STATS.map((s, i) => (
+                <div key={i}>
+                  <p className="font-heading text-5xl font-black text-accent">{s.number}</p>
+                  <p className="text-white/40 uppercase tracking-widest text-sm mt-2">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className={`relative h-[600px] rounded-[4rem] overflow-hidden transition-all duration-1000 delay-300 ${storyVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'}`}>
+            <SafeImage src="https://picsum.photos/seed/bakerykitchen/800/1000" alt="Kitchen" fill className="object-cover" />
+            <div className="absolute inset-0 bg-accent/10 mix-blend-overlay" />
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials - T-SLIDER */}
+      <section className="py-32 bg-secondary/10 overflow-hidden" ref={testRef}>
+        <div className="max-w-7xl mx-auto px-6 mb-16 flex justify-between items-end">
+          <SectionHeading title="Loved by Lagosians" />
+        </div>
+        <div className="flex gap-8 animate-slide-left hover:[animation-play-state:paused]">
+          {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
+            <div key={i} className="w-[400px] shrink-0 bg-secondary/30 p-10 rounded-[2.5rem] border border-white/5 backdrop-blur-sm">
+              <div className="flex gap-1 mb-6">
+                {[1,2,3,4,5].map(n => <div key={n} className="w-2.5 h-2.5 rounded-full bg-accent" />)}
+              </div>
+              <p className="text-white/80 text-xl italic leading-relaxed mb-10">&ldquo;{t.text}&rdquo;</p>
+              <div className="flex items-center gap-4 border-t border-white/10 pt-8">
+                <div className="w-12 h-12 rounded-full bg-accent text-primary flex items-center justify-center font-black text-xl">
+                  {t.name[0]}
+                </div>
+                <div>
+                  <p className="font-bold text-white text-lg uppercase">{t.name}</p>
+                  <p className="text-white/30 text-xs tracking-widest uppercase">{t.role}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Contact Section - C4 (Full Screen Bold) */}
+      <section id="ordernow" className="py-32 px-6 bg-accent" ref={contactRef}>
+        <div className="max-w-5xl mx-auto">
+          <h2 className={`font-heading text-[10vw] md:text-[8vw] font-black text-primary leading-none uppercase mb-12 transition-all duration-1000 ${contactVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            Ready to Celebrate?
+          </h2>
+          <div className="grid md:grid-cols-[1fr_1.5fr] gap-20 items-start border-t-4 border-primary/20 pt-16">
+            <div className="space-y-8">
+              <p className="text-primary/70 text-xl font-bold uppercase tracking-tight">Got a custom request? Or just need a brownie fix? We dey for you.</p>
+              <div className="flex flex-col gap-6">
+                <a href="https://instagram.com/aderaf_entertainment_ventures" className="flex items-center gap-4 text-primary font-black text-xl hover:translate-x-2 transition-transform">
+                  <Instagram size={24} /> @aderaf_entertainment_ventures
+                </a>
+              </div>
+            </div>
+            
+            <div className="bg-primary/5 rounded-[3rem] p-10 border border-primary/10">
+              {sent ? (
+                <div className="text-center py-10 animate-scaleIn">
+                  <div className="w-20 h-20 bg-primary text-accent rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCheck size={40} />
+                  </div>
+                  <h3 className="text-3xl font-heading font-bold text-primary uppercase">Order Received!</h3>
+                  <p className="text-primary/60 mt-2">We'll reach out sharp-sharp to confirm your treats.</p>
+                </div>
+              ) : (
+                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
+                  <input 
+                    type="text" 
+                    placeholder="YOUR NAME" 
+                    required 
+                    className="w-full bg-white/20 border-2 border-primary/10 rounded-2xl px-6 py-4 placeholder:text-primary/40 text-primary font-bold outline-none focus:border-primary/40 transition-all"
+                  />
+                  <input 
+                    type="email" 
+                    placeholder="EMAIL ADDRESS" 
+                    required 
+                    className="w-full bg-white/20 border-2 border-primary/10 rounded-2xl px-6 py-4 placeholder:text-primary/40 text-primary font-bold outline-none focus:border-primary/40 transition-all"
+                  />
+                  <textarea 
+                    placeholder="WHAT ARE WE BAKING?" 
+                    rows={4} 
+                    required 
+                    className="w-full bg-white/20 border-2 border-primary/10 rounded-2xl px-6 py-4 placeholder:text-primary/40 text-primary font-bold outline-none focus:border-primary/40 transition-all resize-none"
+                  ></textarea>
+                  <button className="w-full bg-primary text-accent py-5 rounded-2xl font-black text-xl uppercase hover:scale-[1.02] transition-transform active:scale-95 shadow-xl shadow-primary/10">
+                    Send My Request
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-20 px-6 bg-secondary border-t border-white/5">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16">
+          <div className="md:col-span-2">
+            <Logo />
+            <p className="text-white/40 mt-8 max-w-sm text-lg leading-relaxed">
+              Crafting premium celebration cakes and artisanal pastries for the discerning palate. Made with love in Lagos.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-heading text-xl font-bold text-white uppercase mb-6">Quick Links</h4>
+            <ul className="space-y-4 text-white/50 font-bold uppercase tracking-wider text-sm">
+              <li><a href="#menu" className="hover:text-accent transition-colors">Menu</a></li>
+              <li><a href="#story" className="hover:text-accent transition-colors">Our Story</a></li>
+              <li><a href="#ordernow" className="hover:text-accent transition-colors">Order Now</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-heading text-xl font-bold text-white uppercase mb-6">Social</h4>
+            <ul className="space-y-4 text-white/50 font-bold uppercase tracking-wider text-sm">
+              <li><a href="#" className="hover:text-accent transition-colors">Instagram</a></li>
+              <li><a href="#" className="hover:text-accent transition-colors">WhatsApp</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-white/20 text-sm font-bold uppercase tracking-widest">
+            © {new Date().getFullYear()} Aderaf Entertainment Ventures. All rights reserved.
+          </p>
+          <div className="flex gap-8 text-white/20 text-xs font-bold uppercase tracking-widest">
+            <span>Lagos, Nigeria</span>
+            <span>Artisanal Kitchen</span>
+          </div>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
